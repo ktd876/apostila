@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Rock 1</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    body {
+      background: url('fundo.jpeg') no-repeat center center fixed;
+      background-size: cover;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+      z-index: 0;
+    }
+
+    h1 {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      text-align: center;
+      color: white;
+      z-index: 2;
+      font-size: 40px;
+    }
+
+    #controls {
+      position: absolute;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px 20px;
+      border-radius: 10px;
+    }
+
+    button, select {
+      font-size: 16px;
+      padding: 6px 12px;
+      margin: 0 5px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+
+    canvas {
+      display: block;
+      position: absolute;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 1280px;
+      height: 600px;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+<h1>Rock 1</h1>
+
+<div id="controls">
+  <button onclick="startAnimation()">Iniciar</button>
+  <button onclick="stopAnimation()">Parar</button>
+  <select id="speedSelect" onchange="updateSpeed()">
+    <option value="3">Lenta</option>
+    <option value="5">Média</option>
+    <option value="9" selected>Rápida</option>
+    <option value="16">Ultra Rápida</option>
+  </select>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas() {
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+const CENTER = () => canvas.width / 2;
+const CENTER_Y = () => canvas.height / 2;
+
+let SPEED = 2;
+
+const bumboImg = new Image();
+bumboImg.src = "bumbo.png";
+
+const caixaImg = new Image();
+caixaImg.src = "caixa.png";
+
+class Instrumento {
+  constructor(x, y, imagem, largura, altura) {
+    this.x = x;
+    this.y = y;
+    this.imagem = imagem;
+    this.largura = largura;
+    this.altura = altura;
+    this.scale = 1;
+    this.flashTimer = 0;
+  }
+
+  update() {
+    this.x -= SPEED;
+
+    if (Math.abs(this.x - CENTER()) < 5) {
+      this.scale = 1.4;
+      this.flashTimer = 5;
+    }
+
+    if (this.flashTimer > 0) {
+      this.flashTimer--;
+      if (this.flashTimer === 0) {
+        this.scale = 1;
+      }
+    }
+  }
+
+  draw() {
+    const w = this.largura * this.scale;
+    const h = this.altura * this.scale;
+    ctx.drawImage(this.imagem, this.x - w / 2, this.y - h / 2, w, h);
+  }
+}
+
+let elementos = [];
+const startX = canvas.width + 100;
+
+function gerarSequencia() {
+  elementos = [];
+  const quantidade = 20;
+  const espacamentoEntreBC = 150;
+  const espacamentoEntrePares = 150;
+
+  const y = CENTER_Y() + 80;
+  let x = startX;
+
+  for (let i = 0; i < 5000; i++) {
+    elementos.push(new Instrumento(x, y, bumboImg, 200, 240));
+    elementos.push(new Instrumento(x + espacamentoEntreBC, y, caixaImg, 200, 240));
+    x += espacamentoEntreBC + espacamentoEntrePares;
+  }
+}
+
+function desenharLinhaVerde() {
+  ctx.beginPath();
+  ctx.moveTo(CENTER(), 0);
+  ctx.lineTo(CENTER(), canvas.height);
+  ctx.strokeStyle = "#00FF00";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+let animando = false;
+
+function animar() {
+  if (!animando) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  desenharLinhaVerde();
+
+  for (const elemento of elementos) {
+    elemento.update();
+    elemento.draw();
+  }
+
+  if (elementos.some(e => e.x + e.largura > 0)) {
+    requestAnimationFrame(animar);
+  } else {
+    animando = false;
+  }
+}
+
+function startAnimation() {
+  gerarSequencia();
+  animando = true;
+  animar();
+}
+
+function stopAnimation() {
+  animando = false;
+}
+
+function updateSpeed() {
+  const select = document.getElementById("speedSelect");
+  SPEED = parseInt(select.value);
+}
+
+</script>
+</body>
+</html>
